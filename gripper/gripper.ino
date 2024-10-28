@@ -13,10 +13,10 @@ void setup() {
 }
 
 /* Conversion Variables */
-float a_sq {625}; // a = 25 mm
-float b_sq {2025}; // b = 45 mm
-float a2 {50};
-float offset{45};
+float a_sq {625};   // a = 25 mm
+float b_sq {2025};  // b = 45 mm
+float a2 {50};      // a*2
+float offset{45};   // 46.5
 
 int width2deg(float width) {
   // theta = acosd( (a^2 + b^2 - (width+offset)^2) / (2*a*b) )
