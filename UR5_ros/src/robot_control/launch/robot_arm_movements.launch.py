@@ -92,9 +92,9 @@ def generate_launch_description():
     robot_description = get_robot_description()
     robot_description_semantic = get_robot_description_semantic()
     demo_node = Node(
-        package="arm",
-        executable="arm",
-        name="arm",
+        package="robot_control",
+        executable="robot_arm_movements",
+        name="robot_control",
         output="log",
         parameters=[
             robot_description,
