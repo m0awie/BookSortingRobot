@@ -4,7 +4,7 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include "interfaces/srv/arm_command.hpp"  // Include custom service header file
+#include <interfaces/srv/arm_command.hpp>  // Include custom service header file
 
 // Generate target pose message
 auto generatePoseMsg(float x, float y, float z, float qx, float qy, float qz, float qw) {
@@ -50,9 +50,10 @@ moveit_msgs::msg::CollisionObject generateCollisionObject(
 
 // Add predefined collision objects to the scene
 void addCollisionObjects(moveit::planning_interface::PlanningSceneInterface& planning_scene_interface) {
-    auto col_object_table = generateCollisionObject(2.4, 1.2, 0.04, 0.85, 0.25, -0.03, "table");
-    auto col_object_backWall = generateCollisionObject(2.4, 0.04, 1.0, 0.85, -0.45, 0.5, "backWall");
-    auto col_object_sideWall = generateCollisionObject(0.04, 1.2, 1.0, -0.45, 0.25, 0.5, "sideWall");
+    const std::string frame_ID = "world";
+    auto col_object_table = generateCollisionObject(2.4, 1.2, 0.04, 0.85, 0.25, -0.03, "table", frame_ID);
+    auto col_object_backWall = generateCollisionObject(2.4, 0.04, 1.0, 0.85, -0.45, 0.5, "backWall", frame_ID);
+    auto col_object_sideWall = generateCollisionObject(0.04, 1.2, 1.0, -0.45, 0.25, 0.5, "sideWall", frame_ID);
 
     planning_scene_interface.applyCollisionObjects({col_object_table, col_object_backWall, col_object_sideWall});
 }
