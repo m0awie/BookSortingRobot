@@ -8,11 +8,12 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(interfaces)
 find_package(geometry_msgs REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 
 add_executable(robot_arm_movements src/robot_arm_movements.cpp)
-ament_target_dependencies(robot_arm_movements rclcpp geometry_msgs moveit_ros_planning_interface)
+ament_target_dependencies(robot_arm_movements rclcpp geometry_msgs moveit_ros_planning_interface interfaces)
 
 install(DIRECTORY
   launch
