@@ -8,7 +8,8 @@ def generate_launch_description():
     urdf_file = os.path.join(
         get_package_share_directory('visualisation'),
         'urdf',
-        'two_finger_gripper.urdf.xacro'
+        'gripper.urdf.xacro',
+        'ur5_with_gripper.urdf.xacro'
     )
     rviz_config = os.path.join(
         get_package_share_directory('visualisation'),

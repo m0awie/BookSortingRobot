@@ -1,7 +1,7 @@
 <robot name="gripper" xmlns:xacro="http://ros.org/wiki/xacro">
 
     <!-- Base link -->
-    <link name="base_link">
+    <link name="link_0">
         <visual>
             <geometry>
                 <box size="0.05 0.15 0.06"/> <!-- Base dimensions adjusted -->
@@ -10,6 +10,11 @@
                 <color rgba="0.5 0.5 0.5 1"/>
             </material>
         </visual>
+        <collision>
+            <geometry>
+                <box size="0.05 0.15 0.06"/> <!-- Collision geometry matches visual -->
+            </geometry>
+        </collision>
     </link>
 
     <!-- Left finger -->
@@ -52,7 +57,7 @@
 
     <!-- Left finger joint (prismatic for symmetric opening) -->
     <joint name="main_joint" type="prismatic">
-        <parent link="base_link"/>
+        <parent link="link_0"/>
         <child link="jaw_lead"/>
         <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
         <axis xyz="0 -1 0"/>
@@ -61,7 +66,7 @@
 
     <!-- Right finger joint (prismatic for symmetric opening) -->
     <joint name="follow_joint" type="prismatic">
-        <parent link="base_link"/>
+        <parent link="link_0"/>
         <child link="jaw_follow"/>
         <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
         <axis xyz="0 1 0"/>
