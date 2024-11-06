@@ -20,7 +20,7 @@ class GripperVisualisation(Node):
         # Publish joint states
         joint_state_msg = JointState()
         joint_state_msg.header.stamp = self.get_clock().now().to_msg()
-        joint_state_msg.name = ["left_joint", "right_joint"]
+        joint_state_msg.name = ["main_joint"]
         joint_state_msg.position = [self.finger_position, self.finger_position]
         self.joint_state_pub.publish(joint_state_msg)
 def main(args=None):

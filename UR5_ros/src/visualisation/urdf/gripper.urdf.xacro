@@ -4,7 +4,7 @@
     <link name="base_link">
         <visual>
             <geometry>
-                <box size="0.1 0.1 0.02"/> <!-- Base dimensions adjusted -->
+                <box size="0.05 0.15 0.06"/> <!-- Base dimensions adjusted -->
             </geometry>
             <material name="gray">
                 <color rgba="0.5 0.5 0.5 1"/>
@@ -13,59 +13,60 @@
     </link>
 
     <!-- Left finger -->
-    <link name="left_finger">
+    <link name="jaw_lead">
         <visual>
             <geometry>
-                <box size="0.02 0.02 0.1"/> <!-- Finger size -->
+                <box size="0.08 0.005 0.1"/> <!-- Finger size -->
             </geometry>
-            <origin xyz="0.0 0.05 0.0"/>
+            <origin xyz="-0.015 0.05 0.03"/>
             <material name="blue">
                 <color rgba="0.0 0.0 1.0 1"/>
             </material>
         </visual>
         <collision>
             <geometry>
-                <box size="0.02 0.02 0.1"/> <!-- Collision geometry matches visual -->
+                <box size="0.08 0.005 0.1"/> <!-- Collision geometry matches visual -->
             </geometry>
-            <origin xyz="0.0 0.05 0.0"/>
+            <origin xyz="-0.015 0.05 0.03"/>
         </collision>
     </link>
 
     <!-- Right finger -->
-    <link name="right_finger">
+    <link name="jaw_follow">
         <visual>
             <geometry>
-                <box size="0.02 0.02 0.1"/> <!-- Finger size -->
+                <box size="0.08 0.005 0.1"/> <!-- Finger size -->
             </geometry>
-            <origin xyz="0.0 -0.05 0.0"/>
+            <origin xyz="-0.015 -0.05 0.03"/>
             <material name="red">
                 <color rgba="1.0 0.0 0.0 1"/>
             </material>
         </visual>
         <collision>
             <geometry>
-                <box size="0.02 0.02 0.1"/> <!-- Collision geometry matches visual -->
+                <box size="0.08 0.005 0.1"/> <!-- Collision geometry matches visual -->
             </geometry>
-            <origin xyz="0.0 -0.05 0.0"/>
+            <origin xyz="-0.015 -0.05 0.03"/>
         </collision>
     </link>
 
     <!-- Left finger joint (prismatic for symmetric opening) -->
-    <joint name="left_joint" type="prismatic">
+    <joint name="main_joint" type="prismatic">
         <parent link="base_link"/>
-        <child link="left_finger"/>
-        <origin xyz="0.0 0.05 0.0" rpy="0 0 0"/>
-        <axis xyz="0 1 0"/>
+        <child link="jaw_lead"/>
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 -1 0"/>
         <limit lower="0" upper="0.05" effort="1.0" velocity="0.5"/>
     </joint>
 
     <!-- Right finger joint (prismatic for symmetric opening) -->
-    <joint name="right_joint" type="prismatic">
+    <joint name="follow_joint" type="prismatic">
         <parent link="base_link"/>
-        <child link="right_finger"/>
-        <origin xyz="0.0 -0.05 0.0" rpy="0 0 0"/>
-        <axis xyz="0 -1 0"/>
+        <child link="jaw_follow"/>
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+        <axis xyz="0 1 0"/>
         <limit lower="0" upper="0.05" effort="1.0" velocity="0.5"/>
+        <mimic joint="main_joint" multiplyer="1.0"/>
     </joint>
 
 </robot>
