@@ -3,8 +3,11 @@
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit_msgs/msg/constraints.hpp>
+#include <moveit_msgs/msg/joint_constraint.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <interfaces/srv/arm_command.hpp>  // Include custom service header file
+#include <cmath>
 
 // Generate target pose message
 auto generatePoseMsg(float x, float y, float z, float qx, float qy, float qz, float qw) {
@@ -19,14 +22,25 @@ auto generatePoseMsg(float x, float y, float z, float qx, float qy, float qz, fl
     return msg;
 }
 
+moveit_msgs::msg::JointConstraint generateJointConstraint(const std::string& joint_name, double position, double tolerance_above, double tolerance_below) {
+    moveit_msgs::msg::JointConstraint joint_constraint;
+    joint_constraint.joint_name = joint_name;
+    joint_constraint.position = position;
+    joint_constraint.tolerance_above = tolerance_above;
+    joint_constraint.tolerance_below = tolerance_below;
+    joint_constraint.weight = 1.0;
+    return joint_constraint;
+}
+
 // Set up collision objects in the planning scene
 moveit_msgs::msg::CollisionObject generateCollisionObject(
     float sx, float sy, float sz, 
     float x, float y, float z, 
-    const std::string& id) {
+    const std::string& id, const std::string& frame_id) {
     
     moveit_msgs::msg::CollisionObject collision_object;
     collision_object.id = id;
+    collision_object.header.frame_id = frame_id;
     shape_msgs::msg::SolidPrimitive primitive;
 
     primitive.type = primitive.BOX;
@@ -65,6 +79,9 @@ std::shared_ptr<moveit::planning_interface::PlanningSceneInterface> planning_sce
 // Execute and check success for a given pose
 bool planAndExecutePose(const geometry_msgs::msg::Pose& target_pose) {
     move_group_interface->setPoseTarget(target_pose);
+
+    
+
     moveit::planning_interface::MoveGroupInterface::Plan plan;
     bool success = static_cast<bool>(move_group_interface->plan(plan));
     if (success) {
@@ -77,18 +94,18 @@ bool planAndExecutePose(const geometry_msgs::msg::Pose& target_pose) {
 
 // Move functions for predefined motions
 bool moveToShelf() {
-    geometry_msgs::msg::Pose shelf_pose = generatePoseMsg(0.5, 0.2, 1.0, 0, 0, 0, 1);
+    geometry_msgs::msg::Pose shelf_pose = generatePoseMsg(0.5, 0.2, 0.3, 0, 1, 0, 0);
     return planAndExecutePose(shelf_pose);
 }
 
 bool moveToInventory() {
-    geometry_msgs::msg::Pose inventory_pose = generatePoseMsg(0.6, 0.3, 1.0, 0, 0, 0, 1);
+    geometry_msgs::msg::Pose inventory_pose = generatePoseMsg(0.6, 0.3, 0.3, 0, 1, 0, 0); // z goes 149mm lower than expected
     return planAndExecutePose(inventory_pose);
 }
 
 // Move function for dynamic position based on request coordinates
 bool moveToBookSpine(float x, float y, float z) {
-    geometry_msgs::msg::Pose book_spine_pose = generatePoseMsg(x, y, z, 0, 0, 0, 1);
+    geometry_msgs::msg::Pose book_spine_pose = generatePoseMsg(x, y, z, 0, 1, 0, 0);
     return planAndExecutePose(book_spine_pose);
 }
 
@@ -97,16 +114,46 @@ void planAndExecuteCallback(
     const std::shared_ptr<interfaces::srv::ArmCommand::Request> request,
     std::shared_ptr<interfaces::srv::ArmCommand::Response> response) {
 
-    if (request->command == "move_to_shelf") {
-        response->success = moveToShelf();
-    } else if (request->command == "move_to_inventory") {
-        response->success = moveToInventory();
-    } else if (request->command == "move_to_book_spine") {
-        response->success = moveToBookSpine(request->x, request->y, request->z);
-    } else {
-        response->success = false;
-        RCLCPP_WARN(rclcpp::get_logger("arm"), "Unknown command requested.");
+    geometry_msgs::msg::Pose shelf_pose = generatePoseMsg(0.5, 0.2, 0.3, 0, 1, 0, 0);
+    move_group_interface-> setPoseTarget(shelf_pose);
+
+    moveit_msgs::msg::Constraints constraints;
+    constraints.joint_constraints.push_back(generateJointConstraint("shoulder_pan_joint", 0.0, M_PI/2, M_PI/2));
+    constraints.joint_constraints.push_back(generateJointConstraint("elbow_joint", M_PI/2, M_PI/2, M_PI/2));
+    constraints.joint_constraints.push_back(generateJointConstraint("wrist_1_joint", -M_PI/2, M_PI/2, M_PI/2));
+    constraints.joint_constraints.push_back(generateJointConstraint("wrist_2_joint", -M_PI/2, M_PI/2, M_PI/2));
+    constraints.joint_constraints.push_back(generateJointConstraint("wrist_3_joint", 0.0, M_PI, M_PI));
+
+
+    move_group_interface->setPathConstraints(constraints);
+
+    moveit::planning_interface::MoveGroupInterface::Plan planMessage;
+    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    //bool success = (move_group_interface->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    bool success = (move_group_interface->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+
+    if (success) {
+        move_group_interface->execute(planMessage);
+        response->success = true;
     }
+    else {
+        response->success = false; 
+    }
+
+    move_group_interface->clearPathConstraints();
+    
+    // if (request->command == "move_to_shelf") {
+    //     response->success = moveToShelf();
+    // } else if (request->command == "move_to_inventory") {
+    //     response->success = moveToInventory();
+    // } 
+    // // else if (request->command == "move_to_book_spine") {
+    // //     response->success = moveToBookSpine(request->x, request->y, request->z);
+    // // } 
+    // else {
+    //     response->success = false;
+    //     RCLCPP_WARN(rclcpp::get_logger("arm"), "Unknown command requested.");
+    // }
 }
 
 int main(int argc, char* argv[]) {
