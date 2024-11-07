@@ -11,9 +11,17 @@ find_package(rclcpp REQUIRED)
 find_package(interfaces)
 find_package(geometry_msgs REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+
 
 add_executable(robot_arm_movements src/robot_arm_movements.cpp)
-ament_target_dependencies(robot_arm_movements rclcpp geometry_msgs moveit_ros_planning_interface interfaces)
+ament_target_dependencies(robot_arm_movements rclcpp geometry_msgs moveit_ros_planning_interface interfaces tf2 tf2_ros)
+
+install(TARGETS
+  robot_arm_movements
+  DESTINATION lib/${PROJECT_NAME}/
+)
 
 install(DIRECTORY
   launch
