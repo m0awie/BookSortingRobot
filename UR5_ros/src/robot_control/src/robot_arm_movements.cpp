@@ -73,72 +73,82 @@ void addCollisionObjects(moveit::planning_interface::PlanningSceneInterface& pla
 }
 
 // Global variables
-std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface;
+std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface; 
 std::shared_ptr<moveit::planning_interface::PlanningSceneInterface> planning_scene_interface;
 
 // Execute and check success for a given pose
-bool planAndExecutePose(const geometry_msgs::msg::Pose& target_pose) {
-    move_group_interface->setPoseTarget(target_pose);
+// bool planAndExecutePose(const geometry_msgs::msg::Pose& target_pose) {
+//     move_group_interface->setPoseTarget(target_pose);
 
     
 
-    moveit::planning_interface::MoveGroupInterface::Plan plan;
-    bool success = static_cast<bool>(move_group_interface->plan(plan));
-    if (success) {
-        move_group_interface->execute(plan);
-    }
-    move_group_interface->stop();
-    move_group_interface->clearPoseTargets();
-    return success;
-}
+//     moveit::planning_interface::MoveGroupInterface::Plan plan;
+//     bool success = static_cast<bool>(move_group_interface->plan(plan));
+//     if (success) {
+//         move_group_interface->execute(plan);
+//     }
+//     move_group_interface->stop();
+//     move_group_interface->clearPoseTargets();
+//     return success;
+// }
 
 // Move functions for predefined motions
-bool moveToShelf() {
-    geometry_msgs::msg::Pose shelf_pose = generatePoseMsg(0.5, 0.2, 0.3, 0, 1, 0, 0);
-    return planAndExecutePose(shelf_pose);
-}
+// bool moveToShelf() {
+//     geometry_msgs::msg::Pose shelf_pose = generatePoseMsg(0.5, 0.2, 0.3, 0, 1, 0, 0);
+//     return planAndExecutePose(shelf_pose);
+// }
 
-bool moveToInventory() {
-    geometry_msgs::msg::Pose inventory_pose = generatePoseMsg(0.6, 0.3, 0.3, 0, 1, 0, 0); // z goes 149mm lower than expected
-    return planAndExecutePose(inventory_pose);
-}
+// bool moveToInventory() {
+//     geometry_msgs::msg::Pose inventory_pose = generatePoseMsg(0.6, 0.3, 0.3, 0, 1, 0, 0); // z goes 149mm lower than expected
+//     return planAndExecutePose(inventory_pose);
+// }
 
-// Move function for dynamic position based on request coordinates
-bool moveToBookSpine(float x, float y, float z) {
-    geometry_msgs::msg::Pose book_spine_pose = generatePoseMsg(x, y, z, 0, 1, 0, 0);
-    return planAndExecutePose(book_spine_pose);
-}
+// // Move function for dynamic position based on request coordinates
+// bool moveToBookSpine(float x, float y, float z) {
+//     geometry_msgs::msg::Pose book_spine_pose = generatePoseMsg(x, y, z, 0, 1, 0, 0);
+//     return planAndExecutePose(book_spine_pose);
+// }
 
 // Service callback function
-void planAndExecuteCallback(
-    const std::shared_ptr<interfaces::srv::ArmCommand::Request> request,
-    std::shared_ptr<interfaces::srv::ArmCommand::Response> response) {
+void planAndExecuteCallback(const std::shared_ptr<interfaces::srv::ArmCommand::Request> request, std::shared_ptr<interfaces::srv::ArmCommand::Response> response) {
 
-    geometry_msgs::msg::Pose shelf_pose = generatePoseMsg(0.5, 0.2, 0.3, 0, 1, 0, 0);
-    move_group_interface-> setPoseTarget(shelf_pose);
+    tf2::Quaternion quaternion;
+    quaternion.setRPY(request->roll, request->pitch, request->yaw);
+
+    // Generate target pose
+    geometry_msgs::msg::Pose target_pose = generatePoseMsg(
+        request->x, request->y, request->z,
+        quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w()
+    );
+
+    move_group_interface->setPoseTarget(target_pose);
 
     moveit_msgs::msg::Constraints constraints;
-    constraints.joint_constraints.push_back(generateJointConstraint("shoulder_pan_joint", 0.0, M_PI/2, M_PI/2));
-    constraints.joint_constraints.push_back(generateJointConstraint("elbow_joint", M_PI/2, M_PI/2, M_PI/2));
-    constraints.joint_constraints.push_back(generateJointConstraint("wrist_1_joint", -M_PI/2, M_PI/2, M_PI/2));
-    constraints.joint_constraints.push_back(generateJointConstraint("wrist_2_joint", -M_PI/2, M_PI/2, M_PI/2));
-    constraints.joint_constraints.push_back(generateJointConstraint("wrist_3_joint", 0.0, M_PI, M_PI));
-
-
+    constraints.joint_constraints.push_back(generateJointConstraint("shoulder_pan_joint", 0.0       , M_PI/2, M_PI/2));
+    constraints.joint_constraints.push_back(generateJointConstraint("elbow_joint"       , M_PI/2    , M_PI/2, M_PI/2));
+    constraints.joint_constraints.push_back(generateJointConstraint("wrist_1_joint"     , -M_PI/2   , M_PI/2, M_PI/2));
+    constraints.joint_constraints.push_back(generateJointConstraint("wrist_2_joint"     , -M_PI/2   , M_PI/2, M_PI/2));
+    constraints.joint_constraints.push_back(generateJointConstraint("wrist_3_joint"     , 0.0       , M_PI  , M_PI));
     move_group_interface->setPathConstraints(constraints);
 
+
     moveit::planning_interface::MoveGroupInterface::Plan planMessage;
-    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    //bool success = (move_group_interface->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    bool success = (move_group_interface->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    bool success = static_cast<bool>(move_group_interface->plan(planMessage));
 
     if (success) {
         move_group_interface->execute(planMessage);
         response->success = true;
+        // response->message = "Motion successfully executed.";
+    } else {
+        response->success = false;
+        RCLCPP_WARN(rclcpp::get_logger("arm"), "Motion planning failed.");
+        // response->message = "Motion planning failed.";
     }
-    else {
-        response->success = false; 
-    }
+
+    // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    // //bool success = (move_group_interface->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    // bool success = (move_group_interface->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+
 
     move_group_interface->clearPathConstraints();
     
@@ -157,23 +167,28 @@ void planAndExecuteCallback(
 }
 
 int main(int argc, char* argv[]) {
+
     rclcpp::init(argc, argv);
 
     // Create ROS 2 node
     auto node = std::make_shared<rclcpp::Node>("arm", rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true));
 
     planning_scene_interface = std::make_shared<moveit::planning_interface::PlanningSceneInterface>();
-    addCollisionObjects(*planning_scene_interface);
 
-    // Create MoveGroupInterface
+    addCollisionObjects(*planning_scene_interface);
+    // Initialize MoveGroupInterface after the node is created
     move_group_interface = std::make_shared<moveit::planning_interface::MoveGroupInterface>(node, "ur_manipulator");
     move_group_interface->setPlanningTime(10.0);
 
+    // if (!move_group_interface->getInterfaceDescription()) {
+    //     RCLCPP_ERROR(node->get_logger(), "Unable to connect to MoveGroup. Is MoveIt running?");
+    //     return 1;
+    // }
+
+    RCLCPP_INFO(node->get_logger(), "Connected to MoveGroup successfully.");
+
     // Create custom service
-    auto plan_service = node->create_service<interfaces::srv::ArmCommand>(
-        "arm", 
-        &planAndExecuteCallback
-    );
+    auto plan_service = node->create_service<interfaces::srv::ArmCommand>("arm", &planAndExecuteCallback);
 
     RCLCPP_INFO(node->get_logger(), "Service 'arm' is ready.");
 
@@ -181,3 +196,4 @@ int main(int argc, char* argv[]) {
     rclcpp::shutdown();
     return 0;
 }
+

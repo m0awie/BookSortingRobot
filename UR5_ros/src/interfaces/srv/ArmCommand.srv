@@ -1,11 +1,12 @@
 # interfaces/srv/ArmCommand.srv
 
 # Request
-string command         # The type of action (e.g., "move_to_shelf", "move_to_inventory", "move_to_book_spine")
 float32 x              # X-coordinate (used if command is "move_to_book_spine")
 float32 y              # Y-coordinate (used if command is "move_to_book_spine")
-float32 z              # Z-coordinate (used if command is "move_to_book_spine")
-
+float32 z  
+float32 roll             # X-coordinate (used if command is "move_to_book_spine")
+float32 pitch              # Y-coordinate (used if command is "move_to_book_spine")
+float32 yaw 
 ---
 
 # Response
