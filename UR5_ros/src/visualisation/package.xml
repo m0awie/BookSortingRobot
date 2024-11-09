@@ -13,6 +13,9 @@
   <test_depend>python3-pytest</test_depend>
 
   <depend>setuptools</depend>
+  <depend>rviz2</depend>
+  <depend>moveit2</depend>
+  <depend>ros2_control</depend>
 
   <export>
     <build_type>ament_python</build_type>

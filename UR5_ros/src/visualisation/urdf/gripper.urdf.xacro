@@ -1,7 +1,25 @@
+<!-- <?xml version="1.0"?> -->
 <robot name="gripper" xmlns:xacro="http://ros.org/wiki/xacro">
 
     <!-- Base link -->
     <link name="gripper_base">
+        <visual>
+            <geometry>
+                <cylinder radius="0.025" length="0.07"/> <!-- Base dimensions adjusted -->
+            </geometry>
+            <material name="gray">
+                <color rgba="0.5 0.5 0.5 1"/>
+            </material>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="0.025" length="0.07"/> <!-- Collision geometry matches visual -->
+            </geometry>
+        </collision>
+        
+    </link>
+    
+    <link name="slider">
         <visual>
             <geometry>
                 <box size="0.05 0.15 0.06"/> <!-- Base dimensions adjusted -->
@@ -55,9 +73,15 @@
         </collision>
     </link>
 
+    <joint name = "base_joint" type = "fixed">
+        <parent link = "gripper_base"/>
+        <child link = "slider"/>
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+    </joint>
+
     <!-- Left finger joint (prismatic for symmetric opening) -->
-    <joint name="main_joint" type="prismatic">
-        <parent link="gripper_base"/>
+    <joint name="right_finger_joint" type="prismatic">
+        <parent link="slider"/>
         <child link="jaw_lead"/>
         <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
         <axis xyz="0 -1 0"/>
@@ -65,13 +89,13 @@
     </joint>
 
     <!-- Right finger joint (prismatic for symmetric opening) -->
-    <joint name="follow_joint" type="prismatic">
-        <parent link="gripper_base"/>
+    <joint name="left_finger_joint" type="prismatic">
+        <mimic joint="right_finger_joint" multiplyer="1.0"/>
+        <parent link="slider"/>
         <child link="jaw_follow"/>
         <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
         <axis xyz="0 1 0"/>
         <limit lower="0" upper="0.05" effort="1.0" velocity="0.5"/>
-        <mimic joint="main_joint" multiplyer="1.0"/>
     </joint>
 
 </robot>
