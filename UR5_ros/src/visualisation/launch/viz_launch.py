@@ -7,7 +7,7 @@ import xacro
 def generate_launch_description():
     # Declare path to the URDF file
     package_name = 'visualisation'
-    xacro_path = 'urdf/ur5_with_gripper.xacro'
+    xacro_path = 'urdf/ur5_with_gripper.urdf.xacro'
     # rviz_path = 'rviz/display.rviz'
 
 
@@ -18,12 +18,12 @@ def generate_launch_description():
 
     return LaunchDescription([
         # Robot description parameter
-        Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            output='screen',
-            parameters=[{'robot_description': xacro_raw_description,}]
-        ),
+        # Node(
+        #     package='robot_state_publisher',
+        #     executable='robot_state_publisher',
+        #     output='screen',
+        #     parameters=[{'robot_description': xacro_raw_description,}]
+        # ),
 
         # Joint State Publisher (using GUI for easy control)
         Node(
@@ -31,14 +31,21 @@ def generate_launch_description():
             executable='joint_state_publisher',
             name='joint_state_publisher',
             output='screen'
-        # ),
+        ),
+        # RViz for visualization
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            name='rviz2',
+            # arguments=['-d', rviz_file],
+            output='screen'
+        ),
 
-        # # RViz for visualization
-        # Node(
-        #     package='rviz2',
-        #     executable='rviz2',
-        #     name='rviz2',
-        #     arguments=['-d', rviz_file],
-        #     output='screen'
+        Node(
+            package='joint_state_publisher_gui',
+            executable='joint_state_publisher_gui',
+            name='joint_state_publisher_gui',
+            output='screen'
         )
+
     ])
