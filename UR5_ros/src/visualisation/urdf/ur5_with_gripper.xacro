@@ -8,7 +8,7 @@
   <xacro:include filename="$(find ur_description)/urdf/ur.urdf.xacro"/>
 
   <!-- end effector -->
-  <xacro:include filename="$(find visualisation)/urdf/gripper.urdf.xacro" />
+  <xacro:include filename="$(find visualisation)/urdf/gripper.xacro" />
 
   <!-- Coupler between arm and end effector -->
   <joint name="ur5_gripper_coupler_joint" type="fixed">
