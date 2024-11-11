@@ -1,9 +1,9 @@
 import rclpy
 from rclpy.node import Node
 from interfaces.srv import ArmCommand
-from std_msgs.msg import String
+from std_msgs.msg import String, Float32
 import re
-
+import time
 
 class BrainNode(Node):
     def __init__(self):
@@ -14,31 +14,11 @@ class BrainNode(Node):
         while not self.action_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Waiting for robotic arm service...')
 
-
+        self.gripper_publisher = self.create_publisher(Float32, 'arduinoCommand', 10) 
         self.create_subscription(String, 'book_centroids', self.book_centroid_callback, 10)
 
         
-        # self.command = ArmCommand.Request()
-
-        # goal_position = [0.588, 0.132, 0.222]
-        # quaternion = [0.0, 0.7071, 0.0, 0.7071]
-
-        # self.command.x = goal_position[0]
-        # self.command.y = goal_position[1]
-        # self.command.z = goal_position[2] + 0.149 # TCP Offset is 149 [MAKE SURE Z COORDS ARE +149]
-        # self.command.qx = quaternion[0]
-        # self.command.qy = quaternion[1]
-        # self.command.qz = quaternion[2]
-        # self.command.qw = quaternion[3]
-
-        # # Send command request to the service
-
-        # self.get_logger().info(f"Sending command with x: {self.command.x}, y: {self.command.y}, z: {self.command.z}")
-        # self.get_logger().info(f"Quaternion: [{self.command.qx}, {self.command.qy}, {self.command.qz}, {self.command.qw}]")
-
-        # self.send_action_command(self.command)
-
-
+        
     def book_centroid_callback(self, msg):
         # Extract book title and coordinates from the message
         position_data = self.parse_position_data(msg.data)
@@ -90,6 +70,17 @@ class BrainNode(Node):
                 self.get_logger().error("No response received from the service.")
         except Exception as e:
             self.get_logger().error(f"An exception occurred while processing the response: {e}")
+
+    def activate_gripper(self, command_value):
+        """Publishes a command to the gripper at the specified value."""
+        command_msg = Float32()
+        command_msg.data = command_value
+        self.get_logger().info(f"Publishing gripper command: {command_value}")
+        
+        # Timer-based loop to publish at 0.5-second intervals
+        for _ in range():  # Publish three times as an example; adjust based on your needs
+            self.gripper_publisher.publish(command_msg)
+            rclpy.spin_once(self, timeout_sec=0.5)  # Wait for 0.5 seconds
 
 def main(args=None):
     # Initialize ROS client library and start the node
