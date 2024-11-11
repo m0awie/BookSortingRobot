@@ -3,19 +3,33 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import TimerAction
-from launch.actions import IncludeLaunchDescription
+from launch.actions import TimerAction, IncludeLaunchDescription, DeclareLaunchArgument
 # import xacro
-from launch.substitutions import PathJoinSubstitution, Command, LaunchConfiguration
+from launch.substitutions import PathJoinSubstitution, Command, LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
-    use_fake = True # Fake or Real?
+    my_arg = DeclareLaunchArgument(
+        'use_fake',  # argument name
+        default_value='true',
+        description='A boolean parameter to enable simulated hardware'
+    )
+
+    # Use LaunchConfiguration to get the argument value
+    my_param = LaunchConfiguration('use_fake') # Fake or Real?
+    use_fake = PythonExpression(["'", my_param, "' == 'true'"])
+
+    # use_fake = True # manual overide of command line input
+
     ip_address = 'yyy.yyy.yyy.yyy'
     fake_str = 'true'
 
-    
+    if not use_fake:
+        ip_address = '192.168.0.100'
+        fake_str = 'false'
+
+
     # realsense_launch_file = os.path.join(
     #     get_package_share_directory('realsense2_camera'),
     #     'launch',
@@ -24,9 +38,7 @@ def generate_launch_description():
 
     xacro_path = 'urdf/ur5_with_gripper.xacro'
 
-    if not use_fake:
-        ip_address = '192.168.0.100'
-        fake_str = 'false'
+    
 
     ur_control_launch_args = {
         'ur_type': 'ur5e',
@@ -84,6 +96,7 @@ def generate_launch_description():
     # )
 
     launch_description = [
+        my_arg,
         ur_control_launch,
         moveit_launch,
     ]
