@@ -4,9 +4,10 @@
 float32 x              # X-coordinate (used if command is "move_to_book_spine")
 float32 y              # Y-coordinate (used if command is "move_to_book_spine")
 float32 z  
-float32 roll             # X-coordinate (used if command is "move_to_book_spine")
-float32 pitch              # Y-coordinate (used if command is "move_to_book_spine")
-float32 yaw 
+float32 qx             # X-coordinate (used if command is "move_to_book_spine")
+float32 qy              # Y-coordinate (used if command is "move_to_book_spine")
+float32 qz
+float32 qw 
 ---
 
 # Response

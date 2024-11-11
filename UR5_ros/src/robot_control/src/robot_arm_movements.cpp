@@ -110,61 +110,30 @@ std::shared_ptr<moveit::planning_interface::PlanningSceneInterface> planning_sce
 // }
 
 // Service callback function
-void planAndExecuteCallback(const std::shared_ptr<interfaces::srv::ArmCommand::Request> request, std::shared_ptr<interfaces::srv::ArmCommand::Response> response) {
-
-    tf2::Quaternion quaternion;
-    quaternion.setRPY(request->roll, request->pitch, request->yaw);
-
+void planAndExecuteCallback(const std::shared_ptr<interfaces::srv::ArmCommand::Request> request, 
+                            std::shared_ptr<interfaces::srv::ArmCommand::Response> response) {
     // Generate target pose
-    geometry_msgs::msg::Pose target_pose = generatePoseMsg(
-        request->x, request->y, request->z,
-        quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w()
-    );
-
+    geometry_msgs::msg::Pose target_pose = generatePoseMsg(request->x, request->y, request->z, 
+                                                           request->qx, request->qy, request->qz, request->qw);
     move_group_interface->setPoseTarget(target_pose);
 
-    moveit_msgs::msg::Constraints constraints;
-    constraints.joint_constraints.push_back(generateJointConstraint("shoulder_pan_joint", 0.0       , M_PI/2, M_PI/2));
-    constraints.joint_constraints.push_back(generateJointConstraint("elbow_joint"       , M_PI/2    , M_PI/2, M_PI/2));
-    constraints.joint_constraints.push_back(generateJointConstraint("wrist_1_joint"     , -M_PI/2   , M_PI/2, M_PI/2));
-    constraints.joint_constraints.push_back(generateJointConstraint("wrist_2_joint"     , -M_PI/2   , M_PI/2, M_PI/2));
-    constraints.joint_constraints.push_back(generateJointConstraint("wrist_3_joint"     , 0.0       , M_PI  , M_PI));
-    move_group_interface->setPathConstraints(constraints);
-
-
+    // Plan and execute
     moveit::planning_interface::MoveGroupInterface::Plan planMessage;
     bool success = static_cast<bool>(move_group_interface->plan(planMessage));
 
     if (success) {
         move_group_interface->execute(planMessage);
         response->success = true;
-        // response->message = "Motion successfully executed.";
     } else {
         response->success = false;
         RCLCPP_WARN(rclcpp::get_logger("arm"), "Motion planning failed.");
-        // response->message = "Motion planning failed.";
     }
 
-    // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    // //bool success = (move_group_interface->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    // bool success = (move_group_interface->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-
-
+    // Clear targets and constraints after execution
+    move_group_interface->clearPoseTargets();
     move_group_interface->clearPathConstraints();
-    
-    // if (request->command == "move_to_shelf") {
-    //     response->success = moveToShelf();
-    // } else if (request->command == "move_to_inventory") {
-    //     response->success = moveToInventory();
-    // } 
-    // // else if (request->command == "move_to_book_spine") {
-    // //     response->success = moveToBookSpine(request->x, request->y, request->z);
-    // // } 
-    // else {
-    //     response->success = false;
-    //     RCLCPP_WARN(rclcpp::get_logger("arm"), "Unknown command requested.");
-    // }
 }
+
 
 int main(int argc, char* argv[]) {
 
@@ -196,4 +165,5 @@ int main(int argc, char* argv[]) {
     rclcpp::shutdown();
     return 0;
 }
+
 
