@@ -1,6 +1,9 @@
 import rclpy
 from rclpy.node import Node
 from interfaces.srv import ArmCommand
+from std_msgs.msg import String
+import re
+
 
 class BrainNode(Node):
     def __init__(self):
@@ -11,32 +14,63 @@ class BrainNode(Node):
         while not self.action_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Waiting for robotic arm service...')
 
-        self.command = ArmCommand.Request()
 
-        goal_position = [0.588, 0.132, 0.222]
-        quaternion = [0.0, 0.7071, 0.0, 0.7071]
+        self.create_subscription(String, 'book_centroids', self.book_centroid_callback, 10)
 
-        self.command.x = goal_position[0]
-        self.command.y = goal_position[1]
-        self.command.z = goal_position[2] + 0.149 # TCP Offset is 149 [MAKE SURE Z COORDS ARE +149]
-        self.command.qx = quaternion[0]
-        self.command.qy = quaternion[1]
-        self.command.qz = quaternion[2]
-        self.command.qw = quaternion[3]
+        
+        # self.command = ArmCommand.Request()
 
-        # Send command request to the service
+        # goal_position = [0.588, 0.132, 0.222]
+        # quaternion = [0.0, 0.7071, 0.0, 0.7071]
 
-        self.get_logger().info(f"Sending command with x: {self.command.x}, y: {self.command.y}, z: {self.command.z}")
-        self.get_logger().info(f"Quaternion: [{self.command.qx}, {self.command.qy}, {self.command.qz}, {self.command.qw}]")
+        # self.command.x = goal_position[0]
+        # self.command.y = goal_position[1]
+        # self.command.z = goal_position[2] + 0.149 # TCP Offset is 149 [MAKE SURE Z COORDS ARE +149]
+        # self.command.qx = quaternion[0]
+        # self.command.qy = quaternion[1]
+        # self.command.qz = quaternion[2]
+        # self.command.qw = quaternion[3]
 
-        self.send_action_command(self.command)
+        # # Send command request to the service
+
+        # self.get_logger().info(f"Sending command with x: {self.command.x}, y: {self.command.y}, z: {self.command.z}")
+        # self.get_logger().info(f"Quaternion: [{self.command.qx}, {self.command.qy}, {self.command.qz}, {self.command.qw}]")
+
+        # self.send_action_command(self.command)
 
 
-    # def send_action_command(self, command):
-    #     # Asynchronously call the service and wait for a response
-    #     future = self.action_client.call_async(command)
-    #     future.add_done_callback(self.handle_response)
+    def book_centroid_callback(self, msg):
+        # Extract book title and coordinates from the message
+        position_data = self.parse_position_data(msg.data)
 
+        if position_data:
+            title, x, y, z = position_data
+            self.get_logger().info(f"Received book '{title}' at x={x:.2f}, y={y:.2f}, z={z:.2f}")
+
+            # Set the arm command using the detected centroid position
+            self.command = ArmCommand.Request()
+            self.command.x = x
+            self.command.y = y
+            self.command.z = z + 0.149  # Adjust Z for tool offset
+            self.command.qx, self.command.qy, self.command.qz, self.command.qw = 0.0, 0.7071, 0.0, 0.7071  # Orientation (adjust if needed)
+
+            # Send command to the arm service
+            self.get_logger().info(f"Sending arm command to pick up '{title}' at x={x}, y={y}, z={self.command.z}")
+            self.send_action_command(self.command)
+
+    def parse_position_data(self, data):
+        # Parse the message to extract title and coordinates
+        match = re.search(r"Book Title: (.*), Position: x=([-\d.]+), y=([-\d.]+), z=([-\d.]+)", data)
+        if match:
+            title = match.group(1)
+            x = float(match.group(2))
+            y = float(match.group(3))
+            z = float(match.group(4))
+            return title, x, y, z
+        else:
+            self.get_logger().error("Failed to parse book position data.")
+            return None
+        
     def send_action_command(self, command):
         future = self.action_client.call_async(command)
         rclpy.spin_until_future_complete(self, future, timeout_sec=5.0)
@@ -56,8 +90,6 @@ class BrainNode(Node):
                 self.get_logger().error("No response received from the service.")
         except Exception as e:
             self.get_logger().error(f"An exception occurred while processing the response: {e}")
-
-
 
 def main(args=None):
     # Initialize ROS client library and start the node
